@@ -2,9 +2,8 @@
 #include <WiFiUdp.h>
 #include <ESP8266WebServer.h>
 #include <ArduinoJson.h>
+#include "config.h"
 
-const char* ssid = "your-ssid";
-const char* password = "your-password";
 
 WiFiUDP udp;
 ESP8266WebServer server(80);
@@ -44,7 +43,13 @@ void discoverBulbs() {
   char buffer[128];
   size_t len = serializeJson(doc, buffer);
 
-  IPAddress broadcast = ~WiFi.subnetMask() | WiFi.localIP();
+  IPAddress ip = WiFi.localIP();
+  IPAddress subnet = WiFi.subnetMask();
+  IPAddress broadcast;
+  
+  for (int i = 0; i < 4; i++) {
+    broadcast[i] = ip[i] | ~subnet[i];
+  } 
   udp.beginPacket(broadcast, udpPort);
   udp.write((uint8_t*)buffer, len);
   udp.endPacket();
@@ -110,7 +115,7 @@ void handleRave() {
 
 void setup() {
   Serial.begin(115200);
-  WiFi.begin(ssid, password);
+  WiFi.begin(wifi_ssid, wifi_password);
   Serial.print("Connecting to WiFi...");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
